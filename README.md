@@ -1,6 +1,9 @@
 # linux_software
-this is a common software download script
+
+这是一个通用的Linux 脚本项目
+包含:
+1.镜像安装之后一些常用软件的安装
+2.
 
 
-
-Here are some commonly used Linux scripts stored, not guaranteed for everyone
+不能保证对所有人都是有用的
