@@ -15,3 +15,5 @@ yum install -y vim
 
 #git 
 yum install git
+
+#yum install ntp -y 安装ntp软件包。 网络时间
