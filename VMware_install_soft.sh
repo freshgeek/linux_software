@@ -13,3 +13,5 @@ yum install -y httpd
 #vim
 yum install -y vim
 
+#git 
+yum install git
