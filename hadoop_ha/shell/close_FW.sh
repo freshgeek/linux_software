@@ -1,4 +1,5 @@
 
+#需要slave文件
 arr=($(awk '{print $1}' slave))
 #arr=(1 2 3)
 for i in ${arr[@]};do
