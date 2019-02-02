@@ -3,15 +3,152 @@
 
 高可用 集群 搭建 示例配置
 
+准备工作
+1.修改Linux主机名
+2.修改IP
+3.修改主机名和IP的映射关系
+4.关闭防火墙
+5.ssh免登陆
+6.安装JDK，配置环境变量等
 
 七节点分配:
 
+一般都是移动计算,不移动数据.[尽量不需要传输数据进行计算,data和计算都在一台机器上]
 
-主机名                         IP                                   安装的软件                   运行的进程
-Hadoop001               192.168.35.101            jdk、hadoop                  NameNode、DFSZKFailoverController(zkfc)
-Hadoop002               192.168.35.102            jdk、hadoop                  NameNode、DFSZKFailoverController(zkfc)
-Hadoop003               192.168.35.103            jdk、hadoop                  ResourceManager
-Hadoop004               192.168.35.104            jdk、hadoop                  ResourceManager
-Zookeeper001            192.168.35.201            jdk、hadoop、zookeeper        DataNode、NodeManager、JournalNode、QuorumPeerMain
-Zookeeper002            192.168.35.202            jdk、hadoop、zookeeper        DataNode、NodeManager、JournalNode、QuorumPeerMain
-Zookeeper003            192.168.35.203            jdk、hadoop、zookeeper        DataNode、NodeManager、JournalNode、QuorumPeerMain
+主机名                      IP                      安装的软件                           运行的进程
+hadoop001               192.168.35.101            jdk、hadoop                  NameNode、DFSZKFailoverController(zkfc)
+hadoop002               192.168.35.102            jdk、hadoop                  NameNode、DFSZKFailoverController(zkfc)
+hadoop003               192.168.35.103            jdk、hadoop                  ResourceManager
+hadoop004               192.168.35.104            jdk、hadoop                  ResourceManager
+zookeeper001            192.168.35.201            jdk、hadoop、zookeeper        DataNode、NodeManager、JournalNode、QuorumPeerMain
+zookeeper002            192.168.35.202            jdk、hadoop、zookeeper        DataNode、NodeManager、JournalNode、QuorumPeerMain
+zookeeper003            192.168.35.203            jdk、hadoop、zookeeper        DataNode、NodeManager、JournalNode、QuorumPeerMain
+
+
+
+zk 集群安装
+1.安装配置zooekeeper集群 
+		参考
+		1.1解压
+			tar -zxvf zookeeper-xxx.tar.gz -C /app/
+      
+		1.2修改配置
+			cd /weekend/zookeeper-xxx/conf/
+			cp zoo_sample.cfg zoo.cfg
+			vim zoo.cfg
+			修改：dataDir=/home/data/zookeeper/data
+      {自己定义}
+      
+      
+			在最后添加：
+			server.1=zookeeper001:2888:3888
+			server.2=zookeeper002:2888:3888
+			server.3=zookeeper003:2888:3888
+			server.x 对应 myid 中的值  建议顺序填
+      
+      保存退出
+			然后创建一个tmp文件夹
+			mkdir /app/zookeeper-xxx/tmp
+			再创建一个空文件
+			touch /app/zookeeper-xxx/tmp/myid
+      
+			最后向该文件写入ID
+			echo 1 > /app/zookeeper-xxx/tmp/myid
+      
+		1.3将配置好的zookeeper拷贝到其他节点 
+			scp -r /app/zookeeper-xxx/ zookeeper002:/app/
+			scp -r /app/zookeeper-xxx/ zookeeper003:/app/
+      
+      ssh zookeeper002 "echo 2>/app/zookeeper-xxx/tmp/myid"
+      ssh zookeeper003 "echo 3>/app/zookeeper-xxx/tmp/myid"
+
+  不写myid 集群无法启动  
+
+配置Hadoop集群
+
+直接在Hadoop 1 上面操作 后 复制到其他机器 , 7节点所有机器都需要Hadoop 
+
+修改好后 
+修改slaves(slaves是指定子节点的位置，因为要在 01上启动HDFS、在 03启动yarn，所以 01上的slaves文件指定的是datanode的位置， 03上的slaves文件指定的是nodemanager的位置)
+zookeeper001
+zookeeper002
+zookeeper003
+
+然后免密登陆
+1.因为要复制 所以需要配置 1 到所有的免密
+2.namenode 需要通信 所以相互免密 和 自身免密
+3.还有namenode 需要 启动 datanode 免密
+4.yarn 到 rm 免密
+5.datanode 自己免密 不需要对其他datanode免密
+
+
+###注意：严格按照下面的步骤
+		2.5启动zookeeper集群 
+			cd /app/zookeeper-3.4.5/bin/
+			./zkServer.sh start
+			#查看状态：一个leader，两个follower
+			./zkServer.sh status
+			
+		2.6启动journalnode 
+			cd /weekend/hadoop-2.4.1
+			sbin/hadoop-daemon.sh start journalnode
+			#运行jps命令检验，多了JournalNode进程
+		
+		2.7格式化HDFS 会与journalnode 通信 必须先启动 journalnode 和zk 
+			#在weekend01上执行命令:
+			hdfs namenode -format
+			#格式化后会在根据core-site.xml中的hadoop.tmp.dir配置生成个文件
+      scp -r 本地文件夹 另一台namenode文件夹
+			##也可以这样，hdfs namenode -bootstrapStandby [需要启动, 较复杂]
+		
+		2.8格式化ZKFC(在01上执行即可)  可以观察到在journalnode 的机器下 生成了同样tmp 目录结构的journalnode 文件夹 , 所以执行一次即可
+			hdfs zkfc -formatZK
+		
+		2.9启动HDFS(在01上执行) ---->会将journalnode 也启动 
+			sbin/start-dfs.sh
+
+		2.10启动YARN(#####注意#####：是在03上执行start-yarn.sh，
+    把namenode和resourcemanager分开是因为性能问题，因为他们都要占用大量资源，所以把他们分开了，
+    他们分开了就要分别在不同的机器上启动)
+			sbin/start-yarn.sh
+      
+      
+	验证HDFS HA
+		首先向hdfs上传一个文件
+		hadoop fs -put /etc/profile /profile
+		hadoop fs -ls /
+		然后再kill掉active的NameNode
+		kill -9 <pid of NN>
+		通过浏览器访问：http://hadoop001:50070
+		NameNode 'hadoop002:9000' (active)
+		这个时候hadoop002上的NameNode变成了active
+		在执行命令：
+		hadoop fs -ls /
+		-rw-r--r--   3 root supergroup       1926 2014-02-06 15:36 /profile
+		刚才上传的文件依然存在！！！
+		手动启动那个挂掉的NameNode
+		sbin/hadoop-daemon.sh start namenode
+		通过浏览器访问：http://hadoop001:50070
+		NameNode 'hadoop001:9000' (standby)
+	
+	验证YARN：
+		运行一下hadoop提供的demo中的WordCount程序：
+		hadoop jar share/hadoop/mapreduce/hadoop-mapreduce-examples-2.4.1.jar wordcount /profile /out
+	
+	OK，大功告成！！！
+
+
+
+
+
+如果中间出现问题 一定要将 所有生成的文件夹清楚赶紧 然后一步一步format 执行
+每执行一步都要检查
+
+如果重新配置还是不行 , 建议在将网络配置检查一遍 我搭建时遇到zk环境host文件对应IP错误导致一直无法启动datanode
+
+最后, 看打印的log文件 所有问题都能在log日志种找到信息
+
+
+
+
+
