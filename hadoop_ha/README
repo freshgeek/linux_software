@@ -1,0 +1,17 @@
+
+
+
+高可用 集群 搭建 示例配置
+
+
+七节点分配:
+
+
+主机名                         IP                                   安装的软件                   运行的进程
+Hadoop001               192.168.35.101            jdk、hadoop                  NameNode、DFSZKFailoverController(zkfc)
+Hadoop002               192.168.35.102            jdk、hadoop                  NameNode、DFSZKFailoverController(zkfc)
+Hadoop003               192.168.35.103            jdk、hadoop                  ResourceManager
+Hadoop004               192.168.35.104            jdk、hadoop                  ResourceManager
+Zookeeper001            192.168.35.201            jdk、hadoop、zookeeper        DataNode、NodeManager、JournalNode、QuorumPeerMain
+Zookeeper002            192.168.35.202            jdk、hadoop、zookeeper        DataNode、NodeManager、JournalNode、QuorumPeerMain
+Zookeeper003            192.168.35.203            jdk、hadoop、zookeeper        DataNode、NodeManager、JournalNode、QuorumPeerMain
