@@ -1,4 +1,4 @@
- #!/usr/bin/env bash
+#!/usr/bin/env bash
 #=================================================================#
 #   System Required:  CentOS, Debian, Ubuntu                      #
 #   Description: Check Shadowsocks Server is running or not       #
@@ -38,8 +38,8 @@ for init in "${shadowsocks_init[@]}"; do
                 echo "$(date +'%Y-%m-%d %H:%M:%S') ${name[$i]} start failed" >> ${log}
             fi
         else
-     #echo $i >> ${log}
-         #   echo "$(date +'%Y-%m-%d %H:%M:%S') ${name[$i]} is running with pid $pid" >> ${log}
+	    
+            #echo "$(date +'%Y-%m-%d %H:%M:%S') ${name[$i]} is running with pid $pid" >> ${log}
         fi
     
     fi
@@ -52,7 +52,9 @@ step=1
 
 for (( b = 0 ; b<60 ; b=(b+step) )) ; 
 do
- #echo "$b $step" >>${log}
- shadow_crond;
- sleep $step
+	#echo "$b $step" >>${log}
+	shadow_crond;
+	sleep $step
 done;
+
+
