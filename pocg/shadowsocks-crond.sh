@@ -37,7 +37,7 @@ for init in "${shadowsocks_init[@]}"; do
             else
                 echo "$(date +'%Y-%m-%d %H:%M:%S') ${name[$i]} start failed" >> ${log}
             fi
-        else
+        #else
 	    
             #echo "$(date +'%Y-%m-%d %H:%M:%S') ${name[$i]} is running with pid $pid" >> ${log}
         fi
