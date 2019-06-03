@@ -8,6 +8,9 @@ re_host=$1
 #配置文件
 scp -r root@$re_host:/etc/nginx/my.conf /etc/nginx/
 
+#host
+scp -r root@$re_host:/etc/hosts /etc/
+
 #nginx 主配置
 scp -r root@$re_host:/etc/nginx/nginx.conf /etc/nginx/
 
