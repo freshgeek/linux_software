@@ -21,3 +21,6 @@ scp -r root@$re_host:/root/back /root/
 scp -r root@$re_host:/root/shell /root/
 
 
+systemctl stop firewalld.service #停止firewall
+	
+systemctl disable firewalld.service #禁止firewall开机启动
